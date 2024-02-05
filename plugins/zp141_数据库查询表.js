@@ -15,7 +15,7 @@ const css = `
 `
 
 $plugin({
-    id: "zp999",
+    id: "zp141",
     props: [],
     render,
     init,
