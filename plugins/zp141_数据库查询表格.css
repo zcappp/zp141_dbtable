@@ -1,0 +1,160 @@
+module.exports=`
+
+/**/
+.zp141 {
+    font-size: 13px;
+    padding: 5px;
+}
+
+.zp141 .loaded {
+    display: flex;
+    justify-content: space-between;
+    margin: 6px 0;
+}
+
+.zp141 svg {
+    cursor: pointer;
+    color: grey;
+}
+
+.zp141 .search input {
+    min-width: 400px;
+    max-width: 800px;
+}
+
+.zp141 .rmableinput {
+    position: relative;
+}
+
+.zp141 .clock {
+    width: 19px;
+    padding: 5px;
+}
+
+.zp141 .rminput {
+    position: absolute;
+    top: 0px;
+    right: 3px;
+    padding: 3px;
+    color: silver;
+    display: none;
+}
+
+.zp141 .rmableinput:hover .rminput {
+    display: inline-block;
+}
+
+.zp141 table {
+    overflow-y: auto;
+    display: block;
+    flex: 1;
+}
+
+.zp141 thead {
+    position: sticky;
+    top: 0;
+    z-index: 9;
+}
+
+.zp141 .zmodal {
+    min-width: unset;
+}
+
+.zp141 .menu {
+    position: absolute;
+    background-color: #fff;
+    min-width: 112px;
+    border-radius: 2px;
+    padding: 6px 0;
+    box-shadow: 0 3px 6px -4px rgb(0 0 0 / 12%), 0 6px 16px 0 rgb(0 0 0 / 8%), 0 9px 28px 8px rgb(0 0 0 / 5%);
+}
+
+.zp141 .menu>div {
+    cursor: pointer;
+    padding: 4px 4px 4px 11px;
+    position: relative;
+}
+
+.zp141 .menu>div:hover {
+    background: rgb(0 0 0 / 14%);
+}
+
+.zp141 .hasSubmenu:hover>div {
+    display: block;
+}
+
+.zp141 .menu svg {
+    transform: rotate(180deg);
+    margin-left: 5px;
+}
+
+.zp141 .submenu {
+    position: absolute;
+    width: 99px;
+    top: -6px;
+    left: 112px;
+    display: none;
+}
+
+.zp141 .main {
+    display: flex;
+    max-height: calc(100vh - 88px);
+}
+
+.zp141 .treeWrap {
+    width: 240px;
+    border: 1px solid #e7e7e7;
+    margin-right: 3px;
+}
+
+.zp141 .treeHead {
+    background: rgb(245 245 245);
+    border-bottom: 1px solid #e7e7e7;
+    padding: 8px;
+    line-height: 18px;
+}
+
+.zp141 .tree {
+    overflow-x: auto;
+    max-height: calc(100% - 35px);
+    padding: 5px 0;
+}
+
+.zp141 .tree .node {
+    padding-left: 11px;
+    white-space: nowrap;
+}
+
+.zp141 .tree>.node {
+    padding-left: 0;
+}
+
+.zp141 .tree .txt {
+    cursor: pointer;
+}
+
+.zp141 .tree .selected {
+    color: #0084ff;
+    font-weight: bold;
+}
+
+.zp141 .tree .switcher {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+
+.zp141 .tree .switcher.hasChild {
+    cursor: pointer;
+    background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iIzk3QTNCNyI+PHBhdGggZD0iTTUgNmwzIDQuNUwxMSA2SDV6IiBmaWxsLW9wYWNpdHk9Ii45IiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=);
+    transition: .3s;
+}
+
+.zp141 .tree .switcher.close {
+    transform: rotate(-90deg);
+}
+
+
+
+`
