@@ -6,10 +6,8 @@ module.exports=`
     padding: 5px;
 }
 
-.zp141 .loaded {
-    display: flex;
-    justify-content: space-between;
-    margin: 6px 0;
+.zp141 .btns {
+    margin-bottom: 6px;
 }
 
 .zp141 svg {
@@ -17,18 +15,16 @@ module.exports=`
     color: grey;
 }
 
-.zp141 .search input {
-    min-width: 400px;
-    max-width: 800px;
+.zp141 .search {
+    margin: 0px 5px;
+}
+
+.zp141 .loaded {
+    margin: 6px;
 }
 
 .zp141 .rmableinput {
     position: relative;
-}
-
-.zp141 .clock {
-    width: 19px;
-    padding: 5px;
 }
 
 .zp141 .rminput {
@@ -38,10 +34,22 @@ module.exports=`
     padding: 3px;
     color: silver;
     display: none;
+    background: white;
 }
 
 .zp141 .rmableinput:hover .rminput {
     display: inline-block;
+}
+
+.zp141 .clock {
+    width: 17px;
+    padding: 1px;
+    right: 24px;
+}
+
+.zp141 .btns label,
+.zp141 label input {
+    margin-left: 6px;
 }
 
 .zp141 table {
@@ -98,7 +106,7 @@ module.exports=`
 
 .zp141 .main {
     display: flex;
-    max-height: calc(100vh - 88px);
+    max-height: calc(100% - 38px);
 }
 
 .zp141 .treeWrap {
@@ -154,7 +162,9 @@ module.exports=`
 .zp141 .tree .switcher.close {
     transform: rotate(-90deg);
 }
-
+.zp141 .observer {
+    height: 2px;
+}
 
 
 `

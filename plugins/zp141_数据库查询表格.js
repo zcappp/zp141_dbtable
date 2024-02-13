@@ -1,14 +1,15 @@
 import React, { Fragment } from "react"
 import css from "./zp141_数据库查询表格.css"
 
+const ValidOID = new RegExp("^[0-9a-pA-p]{24}$")
 const _id = "_id"
 let ref, exc, excA, container, props, rd
-let model, QQ, O, count, path
-let list, tblH, tblR, R, tree, data, field, menu, pop, maxCols
+let model, Q0, O, count, path
+let list, doList, Heads, Rows, R, Paths, Display, tree, data, field, menu, pop, maxCols
 let Q = {}
-let hides = []
-let sorts = []
-let _sort = [] // 倒序
+let Hides = []
+let Sorts = []
+let Sort_ = [] // 倒序
 
 function init(_ref) {
     ref = _ref
@@ -22,32 +23,35 @@ function init(_ref) {
         model = list.model
         path = list.path
         count = list.count
-        QQ = JSON.parse(list.query)
+        Q0 = JSON.parse(list.query)
         O = JSON.parse(list.option)
         if (typeof O.sort == "string") O.sort.split(" ").forEach(a => {
-            if (a) a.startsWith("-") ? _sort.push(a) : sorts.push(a)
+            if (a) a.startsWith("-") ? Sort_.push(a) : Sorts.push(a)
         })
-        list = list.all
+        list = props.loadMore ? list.all : list.arr
     }
+    _doList()
     doList()
-    ready()
+    if (props.loadMore) loadMore()
 }
 
 function render() {
     if (!list) return <div/>
     const q = JSON.stringify(Q, null, 1) || ""
     return <Fragment>
-        <div className="search">
-            <svg onClick={setDay} viewBox="0 0 1024 1024" className="zsvg clock"><path d="M533.312 556.416V219.52H438.848v392.32h1.472l243.84 140.8 47.296-81.728-198.144-114.432zM511.488 0C794.624 0 1024 229.376 1024 512s-229.376 512-512.512 512C228.864 1024 0 794.624 0 512s228.864-512 511.488-512z"></path></svg>
-            <span className="rmableinput">
-                <input defaultValue={q} onBlur={search2} onKeyDown={e => e.key === "Enter" && search2()} className="zinput" key={q}/>
-                <svg  onClick={() => {tree = undefined; Q = {}; rd()}}viewBox="64 64 896 896" className="rminput zsvg"><path d="M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 0 0 203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z"></path></svg>
-            </span>
-            <button onClick={search2} className="zbtn" style={{margin:"0 5px"}}>查询</button>
-        </div>
-        <div className="loaded">
-            <div style={{"margin": "6px"}}>已加载/总数：<strong>{list.length}</strong>/<strong>{count}</strong></div>
-            <div><span onClick={toDownload} className="zbtn">导出</span></div>
+        <div className="btns">
+            {!!props.searchBox && <span className="rmableinput">
+                <input defaultValue={q} onBlur={e => {let v = e.target.value; v.startsWith("{") && v.endsWith("}") ? Q = JSON.parse(v) : exc('warn("查询条件必须是合法的json")')}} className="zinput" key={q}/>
+                <svg onClick={setDay} viewBox="0 0 1024 1024" className="rminput zsvg clock"><path d="M533.312 556.416V219.52H438.848v392.32h1.472l243.84 140.8 47.296-81.728-198.144-114.432zM511.488 0C794.624 0 1024 229.376 1024 512s-229.376 512-512.512 512C228.864 1024 0 794.624 0 512s228.864-512 511.488-512z"></path></svg>
+                <svg onClick={() => {Q = {}; search(); rd()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
+            </span>}
+            {props.searchFields && props.searchFields.map((o, i) => <label className="rmableinput" key={i}>
+                {o.label}<input onBlur={e => search3(o, e)} defaultValue={o.value || ""} className="zinput"/>
+                <svg onClick={e => {e.target.previousSibling.value=""; delete Q[o.path]; search(); rd()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
+            </label>)}
+            {(props.searchBox || props.searchFields) && <button onClick={searchBtn} className="zbtn search">查询</button>}
+            {!!props.loaded && <span className="loaded">已加载/总数：<strong>{list.length}</strong>/<strong>{count}</strong></span>}
+            {!!props.Excel && <span onClick={toDownload} className="zbtn export">导出</span>}
         </div>
         <div className="main">{!!tree && rTree()}{rTable()}</div>
         {menu && <div className="menu" style={{top: menu.top, left: menu.left}}>{menu.arr.map(a => rMenu(a))}</div>}
@@ -64,20 +68,20 @@ function render() {
 function rTable() {
     return <table className="ztable">
         <thead onContextMenu={contextMenu}><tr>
-            {tblH.filter(a => !hides.includes(a)).map(a => <th title={a} key={a}><a onClick={e => sort(e, a)} className={sortCx(a)} data-seq={sortSeq(a)}>{a}</a></th>)}
+            {Paths.filter(a => !Hides.includes(a)).map((a, i) => <th className={"h" + i} key={i}><a onClick={e => sort(e, a)} className={sortCx(a)} data-seq={sortSeq(a)}>{Heads ? Heads[i] : a}</a></th>)}
         </tr></thead>
-        <tbody onContextMenu={contextMenu}>{list.map((o, i) => 
-            <tr className={data && data._id === o._id ? " cur" : ""} key={i}>
-                {tblH.filter(a => !hides.includes(a)).map(k => <td title={tblR[i][k] && tblR[i][k].length > 20 ? tblR[i][k] + "" : ""} key={k}>{tblR[i][k]}</td>)}
-            </tr>)}
-            <tr className="observer"/>
+        <tbody onClick={e => props.onCellClick && onCellClick(e)} onContextMenu={contextMenu}>{list.map((o, r) => 
+            <tr className={(data && data._id === o._id ? "cur" : "") + " r" + r} key={r}>{Paths.filter(a => !Hides.includes(a)).map((k, c) => 
+                <td className={"c" + c} key={c}>{Display && Display[c] ? excA(Display[c], {$x: Rows[r][k]}) : Rows[r][k]}</td>
+            )}</tr>)}
+            {!!props.loadMore && <tr className="observer"/>}
         </tbody>
-    </table>
+   </table>
 }
 
 function rTree() {
     return <div className="treeWrap">
-        <div className="treeHead">{tree.fields.join(" | ")}</div>
+        <div className="treeHead">{tree.heads.join(" | ")}</div>
         <div className="tree scrollbar">{rTree1(tree.root, tree.fields.length - 1, [])}</div>
     </div>
 }
@@ -101,9 +105,9 @@ function rMenu(a) {
     </div>
 }
 
-function ready() {
+function loadMore() {
     let el = $(".observer")
-    if (!el || !window.monaco) return setTimeout(() => ready(), 500)
+    if (!el) return setTimeout(() => loadMore(), 500)
     const o = new IntersectionObserver(entries => entries.forEach(a => {
         if (!a.intersectionRatio || count <= list.length) return
         if (typeof Q._id == "string") delete Q._id
@@ -114,82 +118,104 @@ function ready() {
 }
 
 function sortCx(f) {
-    return "zsort" + (sorts.includes(f) ? (_sort.includes(f) ? " desc" : " asc") : "")
+    return "zsort" + (Sorts.includes(f) ? (Sort_.includes(f) ? " desc" : " asc") : "")
 }
 
 function sortSeq(f) {
-    return sorts.includes(f) && sorts.length > 1 ? sorts.indexOf(f) + 1 : ""
+    return Sorts.includes(f) && Sorts.length > 1 ? Sorts.indexOf(f) + 1 : ""
 }
 
 function sort(e, f) {
     if (e.ctrlKey) {
-        if (sorts.includes(f)) {
-            if (_sort.includes(f)) {
-                sorts.splice(sorts.indexOf(f), 1)
-                _sort.splice(_sort.indexOf(f), 1)
-            } else _sort.push(f)
-        } else sorts.push(f)
-    } else if (sorts.includes(f)) {
-        if (_sort.includes(f)) {
-            sorts = []
-            _sort = []
-        } else _sort.push(f)
+        if (Sorts.includes(f)) {
+            if (Sort_.includes(f)) {
+                Sorts.splice(Sorts.indexOf(f), 1)
+                Sort_.splice(Sort_.indexOf(f), 1)
+            } else Sort_.push(f)
+        } else Sorts.push(f)
+    } else if (Sorts.includes(f)) {
+        if (Sort_.includes(f)) {
+            Sorts = []
+            Sort_ = []
+        } else Sort_.push(f)
     } else {
-        sorts = [f]
-        _sort = []
+        Sorts = [f]
+        Sort_ = []
     }
     O.skip = 0
     search()
 }
 
 function search(concat, cb) {
-    O.sort = sorts.map(a => _sort.includes(a) ? "-" + a : a).join(" ")
-    exc(`$${model}.search(path, Q, O, 0)`, { model, path, Q: Object.assign({}, Q, QQ), O }, R => {
+    O.sort = Sorts.map(a => Sort_.includes(a) ? "-" + a : a).join(" ")
+    exc(`$${model}.search(path, Q, O, 0)`, { model, path, Q: Object.assign({}, Q, Q0), O }, R => {
+        if (!R) return
         list = concat == 1 ? list.concat(R.arr) : R.arr
         count = R.count
         data = undefined
         doList()
+        if (props.onSearch) exc(props.onSearch, R)
         rd()
     })
 }
 
-function doList() {
-    tblH = []
-    tblR = []
-    list.forEach(o => {
-        R = {}
-        Object.keys(o).forEach(k => recur(k, o[k]))
-        tblR.push(R)
-    })
-    tblH.sort()
-    if (tblH.length > 600) {
-        if (!maxCols) GV.alert("共有" + tblH.length + "列", "数据量太大，仅展示前500列，建议只查看某一类型的数据或切换到json视图")
-        maxCols = true
-        tblH = tblH.slice(0, 500)
+function _doList() {
+    if (props.diyColumn && props.columns) {
+        Paths = props.columns.map(a => a.path)
+        Heads = props.columns.map(a => a.header)
+        Display = props.columns.map(a => a.display)
+        if (props.filterTree && count >= (props.filterMinCount || 30)) {
+            if (Array.isArray(props.filterTree[0])) distinct(props.filterTree[0][0], Q0, root => tree = { fields: props.filterTree[0], heads: props.filterTree[1], root, open: {} })
+            else distinct(props.filterTree[0], Q0, root => tree = { fields: props.filterTree, heads: props.filterTree, root, open: {} })
+        }
+
+        function add(k, v) {
+            if (Paths.includes(k)) R[k] = v !== undefined && v !== null && v.toString ? v.toString() : v
+        }
+        doList = () => {
+            Rows = []
+            list.forEach((o, i) => {
+                R = {}
+                Paths.forEach(k => k ? add(k, getIn(o, k)) : "")
+                Rows.push(R)
+            })
+        }
+    } else {
+        function recur(K, O) {
+            if (O && typeof O === "object") {
+                Object.keys(O).forEach(k => {
+                    let v = O[k]
+                    k = K + "." + k
+                    if (Array.isArray(v)) {
+                        if (v[0] && typeof v[0] === "object" && !Array.isArray(v[0])) return v.forEach((a, i) => recur(k + "." + i, a))
+                        add(k, JSON.stringify(v))
+                    } else if (v && typeof v === "object") {
+                        recur(k, v)
+                    } else add(k, v)
+                })
+            } else add(K, O)
+        }
+
+        function add(k, v) {
+            if (!Paths.includes(k)) Paths.push(k)
+            R[k] = v !== undefined && v !== null && v.toString ? v.toString() : v
+        }
+        doList = () => {
+            Paths = []
+            Rows = []
+            list.forEach(o => {
+                R = {}
+                Object.keys(o).forEach(k => recur(k, o[k]))
+                Rows.push(R)
+            })
+            Paths.sort()
+        }
+        if (props.diyColumn && ref.isDev) ref.updateMeta("p.P.columns", Paths.map(k => { return { header: k, path: k } }))
     }
 }
 
-function recur(K, O) {
-    if (O && typeof O === "object") {
-        Object.keys(O).forEach(k => {
-            let v = O[k]
-            k = K + "." + k
-            if (Array.isArray(v)) {
-                if (v[0] && typeof v[0] === "object" && !Array.isArray(v[0])) return v.forEach((a, i) => recur(k + "." + i, a))
-                add(k, JSON.stringify(v))
-            } else if (v && typeof v === "object") {
-                recur(k, v)
-            } else add(k, v)
-        })
-    } else add(K, O)
-}
-
-function add(k, v) {
-    if (!tblH.includes(k)) tblH.push(k)
-    R[k] = v !== undefined && v !== null && v.toString ? v.toString() : v
-}
-
 function getIn(o, path) {
+    if (typeof path !== "string") return ""
     path = path.split(".")
     return path.reduce((curr, k) => {
         if (!curr) return
@@ -197,18 +223,24 @@ function getIn(o, path) {
     }, o)
 }
 
-function search2() {
-    Q = $(".search input").value
+function searchBtn() {
     if (!Q) return Q = {}
-    if (!Q.startsWith("{") || !Q.endsWith("}")) return exc('warn("查询条件必须是合法的json")')
-    Q = JSON.parse(Q)
-    if (typeof Q !== "object") return GV.alert("查询条件必须是合法的json")
+    if (typeof Q !== "object") return exc('alert("查询条件必须是合法的json"))')
     O.skip = 0
     search()
 }
 
+function search3(o, e) {
+    let v = e.target.value
+    log(o, v)
+    if(v == "") delete Q[o.path]
+    if(o.type){
+        Q[o.path] = v
+    }
+}
+
 function distinct(field, query, cb) {
-    exc(`$${model}.distinct("", field, query)`, { model, field, query: Object.assign({}, query, QQ) }, ({ arr }) => {
+    exc(`$${model}.distinct("", field, query)`, { model, field, query: Object.assign({}, query, Q0) }, ({ arr }) => {
         if (arr.length > 110) {
             exc('warn("数据量太大, 只显示前100条(共" + arr.length + "条)，可通过添加查询条件限制数据量。")', { arr })
             arr = arr.slice(0, 100)
@@ -230,7 +262,7 @@ function switcher(e) {
     if (path.startsWith("_")) path = path.slice(1)
     let arr = path.split("_")
     let field = tree.fields[arr.length]
-    let query = Object.assign({}, Q, QQ)
+    let query = Object.assign({}, Q, Q0)
     tree.fields.forEach(k => delete query[k])
     let parent = arr.shift()
     query[tree.fields[0]] = tree.root[parent]
@@ -265,8 +297,8 @@ function isId(v) {
 function setDay() {
     let arr = []
     let type = {}
-    const R = tblR.slice(0, 20)
-    tblH.forEach(h => R.forEach(r => {
+    const R = Rows.slice(0, 20)
+    Paths.forEach(h => R.forEach(r => {
         let c = r[h]
         if (c && !arr.includes(h) && (isId(c) || !isNaN(c) || (typeof c == "string" && c.endsWith("Z") && c.includes("T")))) {
             arr.push(h)
@@ -308,7 +340,7 @@ async function download_() {
     let repeat = Array(Math.ceil(count / limit))
     list = []
     for (const a of repeat) {
-        await exc(`$${model}.search("download", Q, O, 0)`, { model, Q: Object.assign({}, Q, QQ), O }, R => {
+        await exc(`$${model}.search("download", Q, O, 0)`, { model, Q: Object.assign({}, Q, Q0), O }, R => {
             if (R.arr) R.arr.forEach(a => {
                 delete a.sel
                 list.push(a)
@@ -322,26 +354,34 @@ async function download_() {
     rd()
 }
 
+function onCellClick(e) {
+    let el = getTD(e.target)
+    data = list[nthChild(el.parentElement)]
+    let path = Paths[nthChild(el)]
+    excA(props.onCellClick, { path, $x: getIn(data, path), $ev: e, text: e.target.innerText })
+}
+
 /* --------------------------------------------------------------------------------------------- */
 
 function contextMenu(e) {
+    if (!props.popFilter) return
     e.preventDefault()
     let k, v, arr
+    let el = getTD(e.target)
     if (e.currentTarget.tagName == "THEAD") {
-        k = e.target.innerText
+        k = Paths[nthChild(el.parentElement)]
         arr = [
-            { txt: "加到筛选树", fn: () => add2Tree(k) },
+            { txt: "加到筛选树", fn: () => add2Tree(k, e.target.innerText) },
             { txt: "存在此字段", fn: filter(k) },
             { txt: "不存在此字段", fn: filter(k) },
             { txt: "隐藏此字段", fn: () => hideHead(k) }
         ]
-        if (hides.length) arr.push({ txt: "显示字段", fn: showHead, arr: hides })
+        if (Hides.length) arr.push({ txt: "显示字段", fn: showHead, arr: Hides })
     } else { // TBODY
-        const colIdx = nthChild(e.target)
-        const rowIdx = nthChild(e.target.parentElement)
-        data = list[rowIdx]
-        k = tblH[colIdx]
+        data = list[nthChild(el.parentElement)]
+        k = Paths[nthChild(el)]
         v = getIn(data, k)
+        if (props.onRightClick) excA(props.onRightClick, { path: k, $x: v, $ev: e, text: e.target.innerText })
         if (v != undefined && v != null) {
             arr = ["等于", "不等于"]
             if (typeof v == "number") arr = arr.concat(["大于或等于", "小于或等于"])
@@ -349,16 +389,13 @@ function contextMenu(e) {
             arr = arr.map(txt => { return { txt, fn: filter(k, v) } })
         } else return
     }
-    if (k != _id && typeof v == "string") {
-        Separator.forEach(s => {
-            if (v.includes(s)) v = v.split(s).find(v => v.length == 24) || v
-        })
-        if (v.length > 24) v = v.slice(0, 24)
-        if (isId(v)) arr.splice(0, 0, { txt: "查询此_id", fn: () => openId(v) })
-    }
     menu = { arr, top: e.clientY - (innerHeight - e.clientY > 200 ? -16 : 25 * arr.length + 28) + "px", left: e.clientX - (innerWidth - e.clientX > 120 ? 10 : 100) + "px" }
     document.addEventListener("click", hideMenu)
     rd()
+}
+
+function getTD(el) {
+    return el.nodeName == "TD" || el.nodeName == "TH" ? el : getTD(el.parentElement)
 }
 
 function hideMenu(e) {
@@ -382,32 +419,25 @@ const filter = (k, v) => e => {
     search()
 }
 
-function openId(_id) {
-    API(znod, "idinwhichdb", { _id }, o => window.open("/app/" + o.ai + "/inndb/" + o.db + "?Q=" + JSON.stringify({ _id })))
-}
-
-function add2Tree(field, fields = [field]) {
-    if (tree) {
-        tree.fields.push(field)
-        return rd()
-    }
-    distinct(field, Q, root => tree = { fields, root, open: {} })
+function add2Tree(field, head) {
+    if (!tree) return distinct(field, Q, root => tree = { fields: [field], heads: [head], root, open: {} })
+    tree.fields.push(field)
+    tree.heads.push(head)
+    rd()
 }
 
 function hideHead(v) {
-    hides.push(v)
+    Hides.push(v)
     rd()
 }
 
 function showHead(e) {
     const i = Array.from(e.currentTarget.lastChild.children).indexOf(e.target)
-    hides.splice(i, 1)
+    Hides.splice(i, 1)
     rd()
 }
 
 
-const Separator = ["_", " ", ".", ":", "#", "|", ","]
-const ValidOID = new RegExp("^[0-9a-pA-p]{24}$")
 
 
 
@@ -419,43 +449,61 @@ $plugin({
         label: "数据集",
         ph: "($c.x.products)"
     }, {
-        prop: "fixedColStart",
-        type: "text",
-        label: "固定列"
-    }, {
-        prop: "filter",
+        prop: "popFilter",
         type: "switch",
-        label: "服务器端筛选"
+        label: "开启右键搜索"
     }, {
-        prop: "filterFields",
+        prop: "searchBox",
+        type: "switch",
+        label: "显示搜索框"
+    }, {
+        prop: "loaded",
+        type: "switch",
+        label: "显示已加载/总数"
+    }, {
+        prop: "Excel",
+        type: "switch",
+        label: "显示导出按钮"
+    }, {
+        prop: "loadMore",
+        type: "switch",
+        label: "开启滚动加载更多"
+    }, {
+        prop: "searchFields",
         type: "text",
-        label: "可筛选字段",
-        ph: '(["type", "x.省份", "x.城市"])',
-        show: 'p.P.filter'
+        label: "查询选项数组",
+        ph: '(["type", "x.省份", "x.城市"])'
     }, {
         prop: "filterTree",
         type: "text",
         label: "筛选树字段",
-        ph: '(["type", "x.一级分类", "x.二级分类"])',
-        show: 'p.P.filter'
+        ph: '(["type", "x.一级分类", "x.二级分类"])'
     }, {
         prop: "filterMinCount",
         type: "number",
         ph: "默认至少30条",
-        label: "超过多少数据量才显示筛选"
+        label: "超过多少数据量才显示筛选",
+        show: 'p.P.filterTree'
     }, {
-        prop: "Excel",
-        type: "switch",
-        label: "Excel"
+        prop: "onSearch",
+        type: "text",
+        label: "搜索事件",
+        ph: 'log(arr, count)',
+        show: 'p.P.popFilter || p.P.searchBox'
     }, {
-        prop: "readOnly",
-        type: "switch",
-        label: "只读",
-        show: '!p.P.Excel'
+        prop: "onCellClick",
+        type: "text",
+        label: "单元格点击事件",
+        ph: "log(path, text, $x)"
+    }, {
+        prop: "onRightClick",
+        type: "text",
+        label: "单元格右键事件",
+        ph: "log(path, text, $x)"
     }, {
         prop: "diyColumn",
         type: "switch",
-        label: "使用自定义列配置"
+        label: "开启列配置"
     }, {
         prop: "columns",
         type: "array",
@@ -470,27 +518,15 @@ $plugin({
             type: "text",
             label: "字段路径"
         }, {
-            prop: "align",
-            type: "select",
-            insertEmpty: 1,
-            label: "对齐方式",
-            items: [
-                [1, 2, 3],
-                ["左对齐", "中间对齐", "右对齐"]
-            ]
-        }, {
-            prop: "width",
-            type: "number",
-            label: "宽度",
-            ph: "px, 默认自适应"
-        }, {
-            prop: "readOnly",
-            type: "switch",
-            label: "只读",
-            show: '!p.P.readOnly'
+            prop: "display",
+            type: "text",
+            label: "渲染表达式",
+            ph: "date($x).format()"
         }]
     }],
     render,
     init,
     css
 })
+
+const RmInput = "M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 0 0 203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z"
