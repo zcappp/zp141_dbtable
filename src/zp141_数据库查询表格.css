@@ -24,12 +24,13 @@ module.exports=`
 }
 
 .zp141 .rmableinput {
+    display: inline-block;
     position: relative;
 }
 
 .zp141 .rminput {
     position: absolute;
-    top: 0px;
+    top: 5px;
     right: 3px;
     padding: 3px;
     color: silver;
@@ -47,9 +48,21 @@ module.exports=`
     right: 24px;
 }
 
-.zp141 .btns label,
-.zp141 label input {
-    margin-left: 6px;
+.zp141 .btns label {
+    margin-left: 11px;
+    display: inline-block;
+}
+
+.zp141 label .zinput,
+.zp141 label .zswitch {
+    margin-left: 5px;
+}
+
+.zp141 label input[type=checkbox] {
+    width: 17px;
+    height: 17px;
+    position: relative;
+    top: 5px;
 }
 
 .zp141 table {
@@ -162,6 +175,7 @@ module.exports=`
 .zp141 .tree .switcher.close {
     transform: rotate(-90deg);
 }
+
 .zp141 .observer {
     height: 2px;
 }

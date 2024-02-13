@@ -4,7 +4,7 @@ import css from "./zp141_数据库查询表格.css"
 const ValidOID = new RegExp("^[0-9a-pA-p]{24}$")
 const _id = "_id"
 let ref, exc, excA, container, props, rd
-let model, Q0, O, count, path
+let model, Q0, O, count, path, skip
 let list, doList, Heads, Rows, R, Paths, Display, tree, data, field, menu, pop, maxCols
 let Q = {}
 let Hides = []
@@ -23,6 +23,7 @@ function init(_ref) {
         model = list.model
         path = list.path
         count = list.count
+        skip = list.skip
         Q0 = JSON.parse(list.query)
         O = JSON.parse(list.option)
         if (typeof O.sort == "string") O.sort.split(" ").forEach(a => {
@@ -45,12 +46,9 @@ function render() {
                 <svg onClick={setDay} viewBox="0 0 1024 1024" className="rminput zsvg clock"><path d="M533.312 556.416V219.52H438.848v392.32h1.472l243.84 140.8 47.296-81.728-198.144-114.432zM511.488 0C794.624 0 1024 229.376 1024 512s-229.376 512-512.512 512C228.864 1024 0 794.624 0 512s228.864-512 511.488-512z"></path></svg>
                 <svg onClick={() => {Q = {}; search(); rd()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
             </span>}
-            {props.searchFields && props.searchFields.map((o, i) => <label className="rmableinput" key={i}>
-                {o.label}<input onBlur={e => search3(o, e)} defaultValue={o.value || ""} className="zinput"/>
-                <svg onClick={e => {e.target.previousSibling.value=""; delete Q[o.path]; search(); rd()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
-            </label>)}
+            {props.searchFields && props.searchFields.map((o, i) => searchField(o, i))}
             {(props.searchBox || props.searchFields) && <button onClick={searchBtn} className="zbtn search">查询</button>}
-            {!!props.loaded && <span className="loaded">已加载/总数：<strong>{list.length}</strong>/<strong>{count}</strong></span>}
+            {!!props.loaded && <span className="loaded">已加载/总数：<strong>{skip + list.length}</strong>/<strong>{count}</strong></span>}
             {!!props.Excel && <span onClick={toDownload} className="zbtn export">导出</span>}
         </div>
         <div className="main">{!!tree && rTree()}{rTable()}</div>
@@ -97,6 +95,20 @@ function rTree1(arr, len, parent) {
     })
 }
 
+function searchField(o, i) {
+    if (o.options && o.type == "下拉选择") return <label key={i}>
+        {o.label}<select value={Q[o.path] || ""} onChange={e => search0(o, e)} className="zinput">{o.options.map((a, j) => <option value={a} key={j}>{a}</option>)}</select>
+    </label>
+    if (o.type == "为空" || o.type == "不为空") return <label key={i}>
+        {o.label}<input type="checkbox" value={Q[o.path] ? Q[o.path].$exists : false} onClick={e => search0(o, e)}/>
+    </label>
+    return <label className="rmableinput" key={i}>
+        {o.label}<input onBlur={e => search0(o, e)} defaultValue={Q[o.path] || ""} className="zinput"/>
+        <svg onClick={e => {e.target.previousSibling.value=""; e.preventDefault(); delete Q[o.path]; search(); rd()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
+    </label>
+}
+//[{ label: "代表队", path: "x.代表队", type: "不等于" }]
+// 等于 不等于 大于或等于 小于或等于 包含 不包含 开头是 末尾是 不为空 为空 下拉选择
 function rMenu(a) {
     if (!a.arr) return <div onClick={a.fn} title={a.title} key={a.txt}>{a.txt}</div>
     return <div onClick={a.fn} className="hasSubmenu" key={a.txt}>{a.txt}
@@ -230,13 +242,26 @@ function searchBtn() {
     search()
 }
 
-function search3(o, e) {
-    let v = e.target.value
-    log(o, v)
-    if(v == "") delete Q[o.path]
-    if(o.type){
-        Q[o.path] = v
+function search0(o, e) {
+    if (o && o.type.endsWith("为空")) {
+        if (!Q[o.path]) Q[o.path] = {}
+        Q[o.path].$exists = !Q[o.path].$exists
+        return rd()
     }
+    let v = e.target.value
+    if (!isNaN(v) && (o.type.includes("等于") || o.type.includes("大于") || o.type.includes("小于"))) {
+        v = parseFloat(v)
+        if (isNaN(v)) {
+            delete Q[o.path]
+            return rd()
+        }
+    } else if (v == "" || v == null) {
+        delete Q[o.path]
+        return rd()
+    }
+    let Type = { 等于: v, 不等于: { $ne: v }, 包含: { $regex: v }, 不包含: { $not: { $regex: v } }, 开头是: { $regex: "^" + v }, 末尾是: { $regex: v + "$" }, 大于: { $gt: v }, 小于: { $lt: v }, 大于或等于: { $gte: v }, 小于或等于: { $lte: v } }
+    Q[o.path] = Type[o.type]
+    rd()
 }
 
 function distinct(field, query, cb) {
@@ -305,7 +330,7 @@ function setDay() {
             type[h] = isId(c) ? _id : (c.endsWith("Z") ? "string" : "number")
         }
     }))
-    pop = [<div><select>{arr.map((o, i) => <option value={o} key={i}>{o}</option>)}</select>的时间范围</div>, <div>
+    pop = [<div><select className="zinput">{arr.map((o, i) => <option value={o} key={i}>{o}</option>)}</select>的时间范围</div>, <div>
         <input type="datetime-local" step="1" className="zinput" onKeyDown={e => e.key === "Enter" && op()}/> -&nbsp;
         <input type="datetime-local" step="1" className="zinput" onKeyDown={e => e.key === "Enter" && op()}/>
     </div>, <button className="zbtn zprimary" onClick={op}>查询</button>]
@@ -467,12 +492,12 @@ $plugin({
     }, {
         prop: "loadMore",
         type: "switch",
-        label: "开启滚动加载更多"
+        label: "开启滚动加载"
     }, {
         prop: "searchFields",
         type: "text",
         label: "查询选项数组",
-        ph: '(["type", "x.省份", "x.城市"])'
+        ph: '([{ label: "有姓名", path: "x.姓名", type: "不为空" }])'
     }, {
         prop: "filterTree",
         type: "text",
