@@ -4,8 +4,7 @@ import css from "./zp141_数据库查询表格.css"
 const ValidOID = new RegExp("^[0-9a-pA-p]{24}$")
 const _id = "_id"
 let ref, exc, excA, container, props, rd
-let model, Q0, O, count, path, skip
-let list, doList, Heads, Rows, R, Paths, Display, tree, data, field, menu, pop, maxCols
+let D, DPath, Q0, O, list, doList, Heads, Rows, R, Paths, Display, tree, data, field, menu, pop, maxCols
 let Q = {}
 let Hides = []
 let Sorts = []
@@ -15,42 +14,31 @@ function init(_ref) {
     ref = _ref
     exc = ref.exc
     excA = ref.excA
-    container = ref.container
     props = ref.props
+    if (props.path) DPath = props.path.startsWith("$c.x") ? props.path : "$c.x." + props.path
     rd = ref.render
-    list = props.data || []
-    if (list.all && list.model) {
-        model = list.model
-        path = list.path
-        count = list.count
-        skip = list.skip
-        Q0 = JSON.parse(list.query)
-        O = JSON.parse(list.option)
-        if (typeof O.sort == "string") O.sort.split(" ").forEach(a => {
-            if (a) a.startsWith("-") ? Sort_.push(a) : Sorts.push(a)
-        })
-        list = props.loadMore ? list.all : list.arr
-    }
-    _doList()
-    doList()
+    container = ref.container
+    container.export = toDownload
     if (props.loadMore) loadMore()
+    _doList()
 }
 
 function render() {
-    if (!list) return <div/>
-    const q = JSON.stringify(Q, null, 1) || ""
-    return <Fragment>
-        <div className="btns">
-            {!!props.searchBox && <span className="rmableinput">
-                <input defaultValue={q} onBlur={e => {let v = e.target.value; v.startsWith("{") && v.endsWith("}") ? Q = JSON.parse(v) : exc('warn("查询条件必须是合法的json")')}} className="zinput" key={q}/>
-                <svg onClick={setDay} viewBox="0 0 1024 1024" className="rminput zsvg clock"><path d="M533.312 556.416V219.52H438.848v392.32h1.472l243.84 140.8 47.296-81.728-198.144-114.432zM511.488 0C794.624 0 1024 229.376 1024 512s-229.376 512-512.512 512C228.864 1024 0 794.624 0 512s228.864-512 511.488-512z"></path></svg>
-                <svg onClick={() => {Q = {}; search(); rd()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
-            </span>}
-            {props.searchFields && props.searchFields.map((o, i) => searchField(o, i))}
-            {(props.searchBox || props.searchFields) && <button onClick={searchBtn} className="zbtn search">查询</button>}
-            {!!props.loaded && <span className="loaded">已加载/总数：<strong>{skip + list.length}</strong>/<strong>{count}</strong></span>}
-            {!!props.Excel && <span onClick={toDownload} className="zbtn export">导出</span>}
-        </div>
+    if (!DPath) return <div>请配置数据路径</div>
+    D = excA(DPath)
+    if (!D) return <div/>
+    list = props.loadMore ? D.all : D.arr
+    if (!Q0) {
+        Q0 = JSON.parse(D.query)
+        O = JSON.parse(D.option)
+        if (!O.skip) O.skip = 0
+        if (typeof O.sort == "string") O.sort.split(" ").forEach(a => {
+            if (a) a.startsWith("-") ? Sort_.push(a) : Sorts.push(a)
+        })
+        _doList()
+    }
+    doList()
+    return <Fragment>{rTop()}
         <div className="main">{!!tree && rTree()}{rTable()}</div>
         {menu && <div className="menu" style={{top: menu.top, left: menu.left}}>{menu.arr.map(a => rMenu(a))}</div>}
         {!!pop && <div className="zmodals">
@@ -95,20 +83,34 @@ function rTree1(arr, len, parent) {
     })
 }
 
+function rTop() {
+    const q = JSON.stringify(Q, null, 1) || ""
+    return <div className="btns">
+        {!!props.searchBox && <span className="rmableinput">
+            <input defaultValue={q} onBlur={e => {let v = e.target.value; v.startsWith("{") && v.endsWith("}") ? Q = JSON.parse(v) : exc('warn("查询条件必须是合法的json")')}} className="zinput" key={q}/>
+            <svg onClick={setDay} viewBox="0 0 1024 1024" className="rminput zsvg clock"><path d="M533.312 556.416V219.52H438.848v392.32h1.472l243.84 140.8 47.296-81.728-198.144-114.432zM511.488 0C794.624 0 1024 229.376 1024 512s-229.376 512-512.512 512C228.864 1024 0 794.624 0 512s228.864-512 511.488-512z"></path></svg>
+            <svg onClick={() => {Q = {}; search(); rd()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
+        </span>}
+        {props.searchFieldOn && props.searchFields && props.searchFields.map((o, i) => searchField(o, i))}
+        {(props.searchBox || props.searchFieldOn) && <button onClick={searchBtn} className="zbtn search">查询</button>}
+        {!!props.loaded && <span className="loaded">已加载/总数：<strong>{D.skip + D.arr.length}</strong>/<strong>{D.count}</strong></span>}
+        {!!props.Excel && <span onClick={toDownload} className="zbtn export">导出</span>}
+    </div>
+}
+
 function searchField(o, i) {
-    if (o.options && o.type == "下拉选择") return <label key={i}>
-        {o.label}<select value={Q[o.path] || ""} onChange={e => search0(o, e)} className="zinput">{o.options.map((a, j) => <option value={a} key={j}>{a}</option>)}</select>
+    if (o.options && o.query == "下拉选择") return <label key={i}>
+        {o.label || o.path}<select value={Q[o.path] || ""} onChange={e => search0(o, e)} className={"zinput select" + i}>{o.options.map((a, j) => <option value={a} key={j}>{a}</option>)}</select>
     </label>
-    if (o.type == "为空" || o.type == "不为空") return <label key={i}>
-        {o.label}<input type="checkbox" value={Q[o.path] ? Q[o.path].$exists : false} onClick={e => search0(o, e)}/>
+    if (o.query == "有无") return <label key={i}>
+        {o.label || o.path}<select value={Q[o.path] ? (Q[o.path].$exists ? "有" : "无") : ""} onChange={e => search0(o, e)} className={"zinput exist" + i}>{["", "有", "无"].map(a => <option value={a} key={a}>{a}</option>)}</select>
     </label>
     return <label className="rmableinput" key={i}>
-        {o.label}<input onBlur={e => search0(o, e)} defaultValue={Q[o.path] || ""} className="zinput"/>
+        {o.label || o.path}<input onBlur={e => search0(o, e)} placeholder={o.query} defaultValue="" className={"zinput input" + i}/>
         <svg onClick={e => {e.target.previousSibling.value=""; e.preventDefault(); delete Q[o.path]; search(); rd()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
     </label>
 }
-//[{ label: "代表队", path: "x.代表队", type: "不等于" }]
-// 等于 不等于 大于或等于 小于或等于 包含 不包含 开头是 末尾是 不为空 为空 下拉选择
+
 function rMenu(a) {
     if (!a.arr) return <div onClick={a.fn} title={a.title} key={a.txt}>{a.txt}</div>
     return <div onClick={a.fn} className="hasSubmenu" key={a.txt}>{a.txt}
@@ -121,7 +123,7 @@ function loadMore() {
     let el = $(".observer")
     if (!el) return setTimeout(() => loadMore(), 500)
     const o = new IntersectionObserver(entries => entries.forEach(a => {
-        if (!a.intersectionRatio || count <= list.length) return
+        if (!a.intersectionRatio || D.count <= list.length) return
         if (typeof Q._id == "string") delete Q._id
         O.skip = list.length
         search(1)
@@ -160,23 +162,23 @@ function sort(e, f) {
 
 function search(concat, cb) {
     O.sort = Sorts.map(a => Sort_.includes(a) ? "-" + a : a).join(" ")
-    exc(`$${model}.search(path, Q, O, 0)`, { model, path, Q: Object.assign({}, Q, Q0), O }, R => {
+    exc(`$${D.model}.search(D.path, Q, O, 0)`, { D, Q: Object.assign({}, Q, Q0), O }, R => {
         if (!R) return
         list = concat == 1 ? list.concat(R.arr) : R.arr
-        count = R.count
         data = undefined
         doList()
         if (props.onSearch) exc(props.onSearch, R)
-        rd()
+        exc('render()')
     })
 }
 
 function _doList() {
+    if (!D) return
     if (props.diyColumn && props.columns) {
         Paths = props.columns.map(a => a.path)
         Heads = props.columns.map(a => a.header)
         Display = props.columns.map(a => a.display)
-        if (props.filterTree && count >= (props.filterMinCount || 30)) {
+        if (props.filterTree && D.count >= (props.filterMinCount || 30)) {
             if (Array.isArray(props.filterTree[0])) distinct(props.filterTree[0][0], Q0, root => tree = { fields: props.filterTree[0], heads: props.filterTree[1], root, open: {} })
             else distinct(props.filterTree[0], Q0, root => tree = { fields: props.filterTree, heads: props.filterTree, root, open: {} })
         }
@@ -222,7 +224,11 @@ function _doList() {
             })
             Paths.sort()
         }
-        if (props.diyColumn && ref.isDev) ref.updateMeta("p.P.columns", Paths.map(k => { return { header: k, path: k } }))
+        if (ref.isDev && props.diyColumn) ref.updateMeta("p.P.columns", Paths.map(k => { return { header: k, path: k } }))
+    }
+    if (ref.isDev && props.searchFieldOn && !props.searchFields) {
+        ref.updateMeta("p.P.searchFields", [{ path: "", query: "包含" }])
+        parent.document.querySelector(".nodepe .zbtns").scrollIntoViewIfNeeded()
     }
 }
 
@@ -243,13 +249,12 @@ function searchBtn() {
 }
 
 function search0(o, e) {
-    if (o && o.type.endsWith("为空")) {
-        if (!Q[o.path]) Q[o.path] = {}
-        Q[o.path].$exists = !Q[o.path].$exists
+    let v = e.target.value
+    if (o.query == "有无") {
+        !v ? delete Q[o.path] : Q[o.path] = { $exists: (v == "有" ? true : false) }
         return rd()
     }
-    let v = e.target.value
-    if (!isNaN(v) && (o.type.includes("等于") || o.type.includes("大于") || o.type.includes("小于"))) {
+    if (!isNaN(v) && (o.query.includes("等于") || o.query.includes("大于") || o.query.includes("小于"))) {
         v = parseFloat(v)
         if (isNaN(v)) {
             delete Q[o.path]
@@ -259,13 +264,13 @@ function search0(o, e) {
         delete Q[o.path]
         return rd()
     }
-    let Type = { 等于: v, 不等于: { $ne: v }, 包含: { $regex: v }, 不包含: { $not: { $regex: v } }, 开头是: { $regex: "^" + v }, 末尾是: { $regex: v + "$" }, 大于: { $gt: v }, 小于: { $lt: v }, 大于或等于: { $gte: v }, 小于或等于: { $lte: v } }
-    Q[o.path] = Type[o.type]
+    let Query = { 等于: v, 下拉选择: v, 不等于: { $ne: v }, 包含: { $regex: v }, 不包含: { $not: { $regex: v } }, 开头是: { $regex: "^" + v }, 末尾是: { $regex: v + "$" }, 大于: { $gt: v }, 小于: { $lt: v }, 大于或等于: { $gte: v }, 小于或等于: { $lte: v } }
+    Q[o.path] = Query[o.query]
     rd()
 }
 
 function distinct(field, query, cb) {
-    exc(`$${model}.distinct("", field, query)`, { model, field, query: Object.assign({}, query, Q0) }, ({ arr }) => {
+    exc(`$${D.model}.distinct("", field, query)`, { D, field, query: Object.assign({}, query, Q0) }, ({ arr }) => {
         if (arr.length > 110) {
             exc('warn("数据量太大, 只显示前100条(共" + arr.length + "条)，可通过添加查询条件限制数据量。")', { arr })
             arr = arr.slice(0, 100)
@@ -356,27 +361,27 @@ function setDay() {
 }
 
 function toDownload() {
-    if (count < 1000) return download_()
-    exc('confirm("提示", "数据量有点大, 确定要导出" + count + "条数据吗")', { count }, () => download_())
+    if (D.count < 1000) return download_()
+    exc('confirm("提示", "数据量有点大, 确定要导出" + D.count + "条数据吗")', { D }, () => download_())
 }
 
 async function download_() {
-    const limit = 200
-    let repeat = Array(Math.ceil(count / limit))
+    let o = Object.assign({}, O, { skip: 0, limit: 200 })
+    if (Paths) o.select = Paths.filter(a => !Hides.includes(a)).join(" ")
+    let repeat = Array(Math.ceil(D.count / 200))
     list = []
     for (const a of repeat) {
-        await exc(`$${model}.search("download", Q, O, 0)`, { model, Q: Object.assign({}, Q, Q0), O }, R => {
+        await exc(`$${D.model}.search("download", Q, o, 0)`, { D, Q: Object.assign({}, Q, Q0), o }, R => {
             if (R.arr) R.arr.forEach(a => {
                 delete a.sel
                 list.push(a)
             })
             exc('success("已加载" + list.length + "条数据")', { list })
-            O.skip = O.skip + limit
+            o.skip = o.skip + 200
         })
     }
     doList()
-    exc('data2Excel(list, null, null, model)', { model, list })
-    rd()
+    exc('data2Excel(list, Heads, Paths, D.model)', { D, list, Heads, Paths })
 }
 
 function onCellClick(e) {
@@ -469,10 +474,10 @@ function showHead(e) {
 $plugin({
     id: "zp141",
     props: [{
-        prop: "data",
+        prop: "path",
         type: "text",
-        label: "数据集",
-        ph: "($c.x.products)"
+        label: "数据路径",
+        ph: "search()的第一个参赛"
     }, {
         prop: "popFilter",
         type: "switch",
@@ -493,11 +498,6 @@ $plugin({
         prop: "loadMore",
         type: "switch",
         label: "开启滚动加载"
-    }, {
-        prop: "searchFields",
-        type: "text",
-        label: "查询选项数组",
-        ph: '([{ label: "有姓名", path: "x.姓名", type: "不为空" }])'
     }, {
         prop: "filterTree",
         type: "text",
@@ -535,18 +535,47 @@ $plugin({
         label: "列配置",
         show: 'p.P.diyColumn',
         struct: [{
-            prop: "header",
-            type: "text",
-            label: "表头"
-        }, {
             prop: "path",
             type: "text",
             label: "字段路径"
+        }, {
+            prop: "header",
+            type: "text",
+            label: "表头"
         }, {
             prop: "display",
             type: "text",
             label: "渲染表达式",
             ph: "date($x).format()"
+        }]
+    }, {
+        prop: "searchFieldOn",
+        type: "switch",
+        label: "开启查询选项"
+    }, {
+        prop: "searchFields",
+        type: "array",
+        label: "查询选项",
+        show: 'p.P.searchFieldOn',
+        struct: [{
+            prop: "path",
+            type: "text",
+            label: "字段路径"
+        }, {
+            prop: "label",
+            type: "text",
+            label: "表单标签",
+            ph: "为空时显示字段路径"
+        }, {
+            prop: "query",
+            type: "select",
+            label: "查询",
+            items: ["有无", "下拉选择", "等于", "不等于", "包含", "不包含", "开头是", "末尾是", "大于", "小于", "大于或等于", "小于或等于"]
+        }, {
+            prop: "options",
+            type: "text",
+            label: "下拉选项",
+            ph: '(["", "男", "女"])'
         }]
     }],
     render,
