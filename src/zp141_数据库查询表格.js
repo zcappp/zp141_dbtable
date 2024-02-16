@@ -11,7 +11,6 @@ function init(ref) {
     f5 = ref.render
     ref.Q = {}
     ref.O = {}
-    ref.hides = []
     ref.sorts = []
     ref.sort_ = [] // 倒序
     const p = ref.props
@@ -37,18 +36,18 @@ function render(ref) {
     }
     ref.doList()
     return <Fragment>{rTop(ref)}<div className="main">{!!ref.tree && rTree(ref)}{rTable(ref)}</div>
-        {ref.menu && <div className="menu" style={{top: ref.menu.top, left: ref.menu.left}}>{ref.menu.arr.map(a => rMenu(a))}</div>}
+        {ref.menu && <div className="menu" style={{top: ref.menu.top, left: ref.menu.left}}>{ref.menu.arr.map(a => <div onClick={a.fn} key={a.txt}>{a.txt}</div>)}</div>}
     {!!ref.pop && rPop(ref)}</Fragment>
 }
 
 function rTable(ref) {
-    const { props, heads, paths, rows, data, display, sorts, sort_, hides } = ref
+    let { props, heads, paths, rows, data, display, sorts, sort_ } = ref
     return <table className="ztable">
         <thead onContextMenu={e => contextMenu(ref, e)}><tr>
-            {paths.filter(a => !hides.includes(a)).map((a, i) => <th className={"h" + i} key={i}><a onClick={e => sort(ref, e, a)} className={sortCx(sorts, sort_, a)} data-seq={sortSeq(sorts, a)}>{heads ? heads[i] : a}</a></th>)}
+            {paths.map((a, i) => <th className={"h" + i} key={i}><a onClick={e => sort(ref, e, a)} className={sortCx(sorts, sort_, a)} data-seq={sortSeq(sorts, a)}>{heads ? heads[i] : a}</a></th>)}
         </tr></thead>
         <tbody onClick={e => props.onCellClick && onCellClick(ref, e)} onContextMenu={e => contextMenu(ref, e)}>{ref.list.map((o, r) => 
-            <tr className={(data && data._id === o._id ? "cur" : "") + " r" + r} key={r}>{paths.filter(a => !hides.includes(a)).map((k, c) => 
+            <tr className={(data && data._id === o._id ? "cur" : "") + " r" + r} key={r}>{paths.map((k, c) => 
                 <td className={"c" + c} key={c}>{display && display[c] ? excA(display[c], {$x: rows[r][k]}) : rows[r][k]}</td>
             )}</tr>)}
             {!!props.loadMore && <tr className="observer"/>}
@@ -83,7 +82,7 @@ function rTop(ref) {
             <svg onClick={() => setDay(ref)} viewBox="0 0 1024 1024" className="rminput zsvg clock"><path d="M533.312 556.416V219.52H438.848v392.32h1.472l243.84 140.8 47.296-81.728-198.144-114.432zM511.488 0C794.624 0 1024 229.376 1024 512s-229.376 512-512.512 512C228.864 1024 0 794.624 0 512s228.864-512 511.488-512z"></path></svg>
             <svg onClick={() => {ref.Q = {}; search(ref); ref.render()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
         </span>}
-        {p.searchFieldOn && p.searchFields && p.searchFields.map((o, i) => searchField(ref.Q, o, i))}
+        {p.searchFieldOn && p.searchFields && p.searchFields.map((o, i) => searchField(ref, o, i))}
         {(p.searchBox || p.searchFieldOn) && <button onClick={() => searchBtn(ref)} className="zbtn search">查询</button>}
         {!!p.loaded && <span className="loaded">已加载/总数：<strong>{ref.D.skip + ref.D.arr.length}</strong>/<strong>{ref.D.count}</strong></span>}
         {!!p.Excel && <span onClick={() => download(ref)} className="zbtn export">导出</span>}
@@ -100,25 +99,17 @@ function rPop(ref) {
     </div>
 }
 
-function searchField(Q, o, i) {
+function searchField(ref, o, i) {
     if (o.options && o.query == "下拉选择") return <label key={i}>
-        {o.label || o.path}<select value={Q[o.path] || ""} onChange={e => search0(ref, o, e)} className={"zinput select" + i}>{o.options.map((a, j) => <option value={a} key={j}>{a}</option>)}</select>
+        {o.label || o.path}<select value={ref.Q[o.path] || ""} onChange={e => search0(ref, o, e)} className={"zinput select" + i}>{o.options.map((a, j) => <option value={a} key={j}>{a}</option>)}</select>
     </label>
     if (o.query == "有无") return <label key={i}>
-        {o.label || o.path}<select value={Q[o.path] ? (Q[o.path].$exists ? "有" : "无") : ""} onChange={e => search0(ref, o, e)} className={"zinput exist" + i}>{["", "有", "无"].map(a => <option value={a} key={a}>{a}</option>)}</select>
+        {o.label || o.path}<select value={ref.Q[o.path] ? (ref.Q[o.path].$exists ? "有" : "无") : ""} onChange={e => search0(ref, o, e)} className={"zinput exist" + i}>{["", "有", "无"].map(a => <option value={a} key={a}>{a}</option>)}</select>
     </label>
     return <label className="rmableinput" key={i}>
         {o.label || o.path}<input onBlur={e => search0(ref, o, e)} placeholder={o.query} defaultValue="" className={"zinput input" + i}/>
-        <svg onClick={e => {e.target.previousSibling.value=""; e.preventDefault(); delete Q[o.path]; search(ref); ref.render()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
+        <svg onClick={e => {e.target.previousSibling.value=""; e.preventDefault(); delete ref.Q[o.path]; search(ref); ref.render()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
     </label>
-}
-
-function rMenu(a) {
-    if (!a.arr) return <div onClick={a.fn} title={a.title} key={a.txt}>{a.txt}</div>
-    return <div onClick={a.fn} className="hasSubmenu" key={a.txt}>{a.txt}
-        <svg viewBox="64 64 896 896" className="zsvg left"><path d="M724 218.3V141c0-6.7-7.7-10.4-12.9-6.3L260.3 486.8a31.86 31.86 0 0 0 0 50.3l450.8 352.1c5.3 4.1 12.9.4 12.9-6.3v-77.3c0-4.9-2.3-9.6-6.1-12.6l-360-281 360-281.1c3.8-3 6.1-7.7 6.1-12.6z"></path></svg>
-        <div className="menu submenu">{a.arr.map(b => <div key={b}>{b}</div>)}</div>
-    </div>
 }
 
 function loadMore(ref) {
@@ -365,7 +356,7 @@ function setDay(ref) {
 function download(ref) {
     async function download_() {
         let O = Object.assign({}, ref.O, { skip: 0, limit: 200 })
-        if (ref.paths) O.select = ref.paths.filter(a => !ref.hides.includes(a)).join(" ")
+        if (ref.paths) O.select = ref.paths.join(" ")
         let repeat = Array(Math.ceil(ref.D.count / 200))
         ref.list = []
         for (const a of repeat) {
@@ -385,11 +376,11 @@ function download(ref) {
     exc('confirm("提示", "数据量有点大, 确定要导出" + ref.D.count + "条数据吗")', { ref }, () => download_())
 }
 
-function onCellClick(ref, e) {
-    let el = getTD(e.target)
-    ref.data = ref.list[nthChild(el.parentElement)]
-    let path = ref.paths[nthChild(el)]
-    excA(ref.props.onCellClick, { path, $x: getIn(ref.data, path), $ev: e, text: e.target.innerText })
+function onCellClick(ref, $ev) {
+    let $el = getTD($ev.target)
+    ref.data = ref.list[nthChild($el.parentElement)]
+    let path = ref.paths[nthChild($el)]
+    excA(ref.props.onCellClick, { $el, $ev, path, $x: ref.data, value: getIn(ref.data, path), text: $ev.target.innerText, $exp: ref.ctx.$exp })
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -402,17 +393,6 @@ function contextMenu(ref, e) {
         ref.menu = undefined
         ref.render()
         document.removeEventListener("click", hideMenu)
-    }
-
-    function hideHead(v) {
-        ref.hides.push(v)
-        ref.render()
-    }
-
-    function showHead(e) {
-        const i = Array.from(e.currentTarget.lastChild.children).indexOf(e.target)
-        ref.hides.splice(i, 1)
-        ref.render()
     }
 
     function add2Tree(field, head) {
@@ -431,22 +411,20 @@ function contextMenu(ref, e) {
         search(ref)
     }
 
-    let k, v, arr
-    let el = getTD(e.target)
+    let $el = getTD(e.target)
+    let k = ref.paths[nthChild($el)]
+    if (!k) return
+    let arr
     if (e.currentTarget.tagName == "THEAD") {
-        k = ref.paths[nthChild(el.parentElement)]
         arr = [
             { txt: "加到筛选树", fn: () => add2Tree(k, e.target.innerText) },
             { txt: "存在此字段", fn: filter(k) },
-            { txt: "不存在此字段", fn: filter(k) },
-            { txt: "隐藏此字段", fn: () => hideHead(k) }
+            { txt: "不存在此字段", fn: filter(k) }
         ]
-        if (ref.hides.length) arr.push({ txt: "显示字段", fn: showHead, arr: ref.hides })
     } else { // TBODY
-        ref.data = ref.list[nthChild(el.parentElement)]
-        k = ref.paths[nthChild(el)]
-        v = getIn(ref.data, k)
-        if (ref.props.onRightClick) excA(ref.props.onRightClick, { path: k, $x: v, $ev: e, text: e.target.innerText })
+        ref.data = ref.list[nthChild($el.parentElement)]
+       let v = getIn(ref.data, k)
+        if (ref.props.onRightClick) excA(ref.props.onRightClick, { $el, $ev: e, path: k, $x: ref.data, value: v, text: e.target.innerText, $exp: ref.ctx.$exp })
         if (v != undefined && v != null) {
             arr = ["等于", "不等于"]
             if (typeof v == "number") arr = arr.concat(["大于或等于", "小于或等于"])
@@ -538,13 +516,13 @@ $plugin({
         label: "列配置",
         show: 'p.P.diyColumn',
         struct: [{
-            prop: "path",
-            type: "text",
-            label: "字段路径"
-        }, {
             prop: "header",
             type: "text",
             label: "表头"
+        }, {
+            prop: "path",
+            type: "text",
+            label: "字段路径"
         }, {
             prop: "display",
             type: "text",
@@ -561,14 +539,14 @@ $plugin({
         label: "查询选项",
         show: 'p.P.searchFieldOn',
         struct: [{
-            prop: "path",
-            type: "text",
-            label: "字段路径"
-        }, {
             prop: "label",
             type: "text",
             label: "表单标签",
             ph: "为空时显示字段路径"
+        }, {
+            prop: "path",
+            type: "text",
+            label: "字段路径"
         }, {
             prop: "query",
             type: "select",

@@ -1,9 +1,16 @@
-module.exports=`
-
-/**/
-.zp141 {
+module.exports=` .zp141 {
     font-size: 13px;
     padding: 5px;
+}
+
+.zp141 .main {
+    display: flex;
+    max-height: 500px;
+}
+
+.zp141 table,
+.zp141 .treeWrap {
+    max-height: 100%;
 }
 
 .zp141 .btns {
@@ -99,28 +106,6 @@ module.exports=`
 
 .zp141 .menu>div:hover {
     background: rgb(0 0 0 / 14%);
-}
-
-.zp141 .hasSubmenu:hover>div {
-    display: block;
-}
-
-.zp141 .menu svg {
-    transform: rotate(180deg);
-    margin-left: 5px;
-}
-
-.zp141 .submenu {
-    position: absolute;
-    width: 99px;
-    top: -6px;
-    left: 112px;
-    display: none;
-}
-
-.zp141 .main {
-    display: flex;
-    max-height: calc(100% - 38px);
 }
 
 .zp141 .treeWrap {
