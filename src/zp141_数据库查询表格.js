@@ -3,16 +3,15 @@ import css from "./zp141_数据库查询表格.css"
 
 const ValidOID = new RegExp("^[0-9a-pA-p]{24}$")
 const _id = "_id"
-let exc, excA, f5
+let exc, excA
 
 function init(ref) {
     exc = ref.exc
     excA = ref.excA
-    f5 = ref.render
     ref.Q = {}
     ref.O = {}
     ref.sorts = []
-    ref.sort_ = [] // 倒序
+    ref.sortR = [] // 倒序
     const p = ref.props
     if (p.path) ref.DPath = p.path.startsWith("$c.x") ? p.path : "$c.x." + p.path
     ref.container.export = () => download(ref)
@@ -30,7 +29,7 @@ function render(ref) {
         ref.O = JSON.parse(ref.D.option)
         if (!ref.O.skip) ref.O.skip = 0
         if (typeof ref.O.sort == "string") ref.O.sort.split(" ").forEach(a => {
-            if (a) a.startsWith("-") ? ref.sort_.push(a) : ref.sorts.push(a)
+            if (a) a.startsWith("-") ? ref.sortR.push(a) : ref.sorts.push(a)
         })
         _doList(ref)
     }
@@ -41,10 +40,10 @@ function render(ref) {
 }
 
 function rTable(ref) {
-    let { props, heads, paths, rows, data, display, sorts, sort_ } = ref
+    let { props, heads, paths, rows, data, display, sorts, sortR } = ref
     return <table className="ztable">
         <thead onContextMenu={e => contextMenu(ref, e)}><tr>
-            {paths.map((a, i) => <th className={"h" + i} key={i}><a onClick={e => sort(ref, e, a)} className={sortCx(sorts, sort_, a)} data-seq={sortSeq(sorts, a)}>{heads ? heads[i] : a}</a></th>)}
+            {paths.map((a, i) => <th className={"h" + i} key={i}><a onClick={e => sort(ref, e, a)} className={sortCx(sorts, sortR, a)} data-seq={sortSeq(sorts, a)}>{heads ? heads[i] : a}</a></th>)}
         </tr></thead>
         <tbody onClick={e => props.onCellClick && onCellClick(ref, e)} onContextMenu={e => contextMenu(ref, e)}>{ref.list.map((o, r) => 
             <tr className={(data && data._id === o._id ? "cur" : "") + " r" + r} key={r}>{paths.map((k, c) => 
@@ -124,8 +123,8 @@ function loadMore(ref) {
     o.observe(el)
 }
 
-function sortCx(sorts, sort_, f) {
-    return "zsort" + (sorts.includes(f) ? (sort_.includes(f) ? " desc" : " asc") : "")
+function sortCx(sorts, sortR, f) {
+    return "zsort" + (sorts.includes(f) ? (sortR.includes(f) ? " desc" : " asc") : "")
 }
 
 function sortSeq(sorts, f) {
@@ -135,26 +134,26 @@ function sortSeq(sorts, f) {
 function sort(ref, e, f) {
     if (e.ctrlKey) {
         if (ref.sorts.includes(f)) {
-            if (ref.sort_.includes(f)) {
+            if (ref.sortR.includes(f)) {
                 ref.sorts.splice(ref.sorts.indexOf(f), 1)
-                ref.sort_.splice(ref.sort_.indexOf(f), 1)
-            } else ref.sort_.push(f)
+                ref.sortR.splice(ref.sortR.indexOf(f), 1)
+            } else ref.sortR.push(f)
         } else ref.sorts.push(f)
     } else if (ref.sorts.includes(f)) {
-        if (ref.sort_.includes(f)) {
+        if (ref.sortR.includes(f)) {
             ref.sorts = []
-            ref.sort_ = []
-        } else ref.sort_.push(f)
+            ref.sortR = []
+        } else ref.sortR.push(f)
     } else {
         ref.sorts = [f]
-        ref.sort_ = []
+        ref.sortR = []
     }
     ref.O.skip = 0
     search(ref)
 }
 
 function search(ref, concat, cb) {
-    ref.O.sort = ref.sorts.map(a => ref.sort_.includes(a) ? "-" + a : a).join(" ")
+    ref.O.sort = ref.sorts.map(a => ref.sortR.includes(a) ? "-" + a : a).join(" ")
     exc(`$${ref.D.model}.search(ref.D.path, Q, ref.O, 0)`, { ref, Q: Object.assign({}, ref.Q, ref.Q0) }, R => {
         if (!R) return
         ref.list = concat == 1 ? ref.list.concat(R.arr) : R.arr
