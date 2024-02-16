@@ -16,7 +16,7 @@ function init(ref) {
     ref.sort_ = [] // 倒序
     const p = ref.props
     if (p.path) ref.DPath = p.path.startsWith("$c.x") ? p.path : "$c.x." + p.path
-    ref.container.export = toDownload
+    ref.container.export = () => download(ref)
     if (p.loadMore) loadMore(ref)
     _doList(ref)
 }
@@ -36,17 +36,9 @@ function render(ref) {
         _doList(ref)
     }
     ref.doList()
-    return <Fragment>{rTop(ref)}
-        <div className="main">{!!ref.tree && rTree(ref)}{rTable(ref)}</div>
+    return <Fragment>{rTop(ref)}<div className="main">{!!ref.tree && rTree(ref)}{rTable(ref)}</div>
         {ref.menu && <div className="menu" style={{top: ref.menu.top, left: ref.menu.left}}>{ref.menu.arr.map(a => rMenu(a))}</div>}
-        {!!ref.pop && <div className="zmodals">
-            <div className="zmask"/>
-            <div className="zmodal">
-                <svg onClick={() => {ref.pop = undefined; f5()}} className="zsvg zsvg-x" viewBox="64 64 896 896"><path d="M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 0 0 203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z"></path></svg>
-                <div className="zmodal-hd">{ref.pop[0]}</div><div className="zmodal-bd">{ref.pop[1]}</div><div className="zmodal-ft">{ref.pop[2]}</div>
-            </div>
-        </div>}
-    </Fragment>
+    {!!ref.pop && rPop(ref)}</Fragment>
 }
 
 function rTable(ref) {
@@ -75,8 +67,8 @@ function rTree1(ref, root, len, parent) {
     return root.map((a, i) => {
         let path = parent.length ? parent.join("_") + "_" + i : "" + i
         return <div className="node" data-path={path} key={i}>
-            <span onClick={() => switcher(ref)} className={"switcher" + (len > parent.length ? " hasChild" : "") + (ref.tree.open[path] ? "" : " close")}/>
-            <span onClick={() => selNode(ref)} className={"txt" + (ref.tree.sel == path ? " selected" : "")}>{a + "" || "空白"}</span>
+            <span onClick={e => switcher(ref, e)} className={"switcher" + (len > parent.length ? " hasChild" : "") + (ref.tree.open[path] ? "" : " close")}/>
+            <span onClick={e => selNode(ref, e)} className={"txt" + (ref.tree.sel == path ? " selected" : "")}>{a + "" || "空白"}</span>
             {ref.tree.open[path] ? rTree1(ref, ref.tree[path], len, parent.concat([i])) : ""}
         </div>
     })
@@ -89,12 +81,22 @@ function rTop(ref) {
         {!!p.searchBox && <span className="rmableinput">
             <input defaultValue={q} onBlur={e => {let v = e.target.value; v.startsWith("{") && v.endsWith("}") ? ref.Q = JSON.parse(v) : exc('warn("查询条件必须是合法的json")')}} className="zinput" key={q}/>
             <svg onClick={() => setDay(ref)} viewBox="0 0 1024 1024" className="rminput zsvg clock"><path d="M533.312 556.416V219.52H438.848v392.32h1.472l243.84 140.8 47.296-81.728-198.144-114.432zM511.488 0C794.624 0 1024 229.376 1024 512s-229.376 512-512.512 512C228.864 1024 0 794.624 0 512s228.864-512 511.488-512z"></path></svg>
-            <svg onClick={() => {ref.Q = {}; search(ref); f5()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
+            <svg onClick={() => {ref.Q = {}; search(ref); ref.render()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
         </span>}
         {p.searchFieldOn && p.searchFields && p.searchFields.map((o, i) => searchField(ref.Q, o, i))}
         {(p.searchBox || p.searchFieldOn) && <button onClick={() => searchBtn(ref)} className="zbtn search">查询</button>}
         {!!p.loaded && <span className="loaded">已加载/总数：<strong>{ref.D.skip + ref.D.arr.length}</strong>/<strong>{ref.D.count}</strong></span>}
-        {!!p.Excel && <span onClick={() => toDownload(ref)} className="zbtn export">导出</span>}
+        {!!p.Excel && <span onClick={() => download(ref)} className="zbtn export">导出</span>}
+    </div>
+}
+
+function rPop(ref) {
+    return <div className="zmodals">
+        <div className="zmask"/>
+        <div className="zmodal">
+            <svg onClick={() => {ref.pop = undefined; ref.render()}} className="zsvg zsvg-x" viewBox="64 64 896 896"><path d="M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 0 0 203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z"></path></svg>
+            <div className="zmodal-hd">{ref.pop[0]}</div><div className="zmodal-bd">{ref.pop[1]}</div><div className="zmodal-ft">{ref.pop[2]}</div>
+        </div>
     </div>
 }
 
@@ -107,7 +109,7 @@ function searchField(Q, o, i) {
     </label>
     return <label className="rmableinput" key={i}>
         {o.label || o.path}<input onBlur={e => search0(ref, o, e)} placeholder={o.query} defaultValue="" className={"zinput input" + i}/>
-        <svg onClick={e => {e.target.previousSibling.value=""; e.preventDefault(); delete Q[o.path]; search(ref); f5()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
+        <svg onClick={e => {e.target.previousSibling.value=""; e.preventDefault(); delete Q[o.path]; search(ref); ref.render()}} viewBox="64 64 896 896" className="rminput zsvg"><path d={RmInput}></path></svg>
     </label>
 }
 
@@ -250,25 +252,25 @@ function searchBtn(ref) {
     search(ref)
 }
 
-function search0({ Q }, o, e) {
+function search0({ Q, render }, o, e) {
     let v = e.target.value
     if (o.query == "有无") {
         !v ? delete Q[o.path] : Q[o.path] = { $exists: (v == "有" ? true : false) }
-        return f5()
+        return render()
     }
     if (!isNaN(v) && (o.query.includes("等于") || o.query.includes("大于") || o.query.includes("小于"))) {
         v = parseFloat(v)
         if (isNaN(v)) {
             delete Q[o.path]
-            return f5()
+            return render()
         }
     } else if (v == "" || v == null) {
         delete Q[o.path]
-        return f5()
+        return render()
     }
     let Query = { 等于: v, 下拉选择: v, 不等于: { $ne: v }, 包含: { $regex: v }, 不包含: { $not: { $regex: v } }, 开头是: { $regex: "^" + v }, 末尾是: { $regex: v + "$" }, 大于: { $gt: v }, 小于: { $lt: v }, 大于或等于: { $gte: v }, 小于或等于: { $lte: v } }
     Q[o.path] = Query[o.query]
-    f5()
+    render()
 }
 
 function distinct(ref, field, query, cb) {
@@ -278,20 +280,15 @@ function distinct(ref, field, query, cb) {
             arr = arr.slice(0, 100)
         }
         cb(arr.filter(a => typeof a !== "object"))
-        f5()
+        ref.render()
     })
-}
-
-function close() {
-    ref.pop = undefined
-    f5()
 }
 
 function switcher(ref, e) {
     const T = ref.tree
     let path = e.target.parentElement.dataset.path
     T.open[path] = !T.open[path]
-    if (T[path] || !T.open[path]) return f5()
+    if (T[path] || !T.open[path]) return ref.render()
     if (path.startsWith("_")) path = path.slice(1)
     let arr = path.split("_")
     let field = T.fields[arr.length]
@@ -360,33 +357,32 @@ function setDay(ref) {
         if (!Object.keys(ref.Q[f]).length) delete ref.Q[f]
         search(ref)
         ref.pop = undefined
-        f5()
+        ref.render()
     }
-    f5()
+    ref.render()
 }
 
-function toDownload(ref) {
-    if (ref.D.count < 1000) return download_(ref)
-    exc('confirm("提示", "数据量有点大, 确定要导出" + ref.D.count + "条数据吗")', { ref }, () => download_(ref))
-}
-
-async function download_(ref) {
-    let O = Object.assign({}, ref.O, { skip: 0, limit: 200 })
-    if (ref.paths) O.select = ref.paths.filter(a => !ref.hides.includes(a)).join(" ")
-    let repeat = Array(Math.ceil(ref.D.count / 200))
-    ref.list = []
-    for (const a of repeat) {
-        await exc(`$${ref.D.model}.search("download", Q, O, 0)`, { ref, Q: Object.assign({}, ref.Q, ref.Q0), O }, R => {
-            if (R.arr) R.arr.forEach(a => {
-                delete a.sel
-                ref.list.push(a)
+function download(ref) {
+    async function download_() {
+        let O = Object.assign({}, ref.O, { skip: 0, limit: 200 })
+        if (ref.paths) O.select = ref.paths.filter(a => !ref.hides.includes(a)).join(" ")
+        let repeat = Array(Math.ceil(ref.D.count / 200))
+        ref.list = []
+        for (const a of repeat) {
+            await exc(`$${ref.D.model}.search("download", Q, O, 0)`, { ref, Q: Object.assign({}, ref.Q, ref.Q0), O }, R => {
+                if (R.arr) R.arr.forEach(a => {
+                    delete a.sel
+                    ref.list.push(a)
+                })
+                exc('success("已加载" + ref.list.length + "条数据")', { ref })
+                O.skip = O.skip + 200
             })
-            exc('success("已加载" + ref.list.length + "条数据")', { ref })
-            O.skip = O.skip + 200
-        })
+        }
+        ref.doList()
+        exc('data2Excel(ref.list, ref.heads, ref.paths, ref.D.model)', { ref })
     }
-    ref.doList()
-    exc('data2Excel(ref.list, ref.heads, ref.paths, ref.D.model)', { ref })
+    if (ref.D.count < 1000) return download_()
+    exc('confirm("提示", "数据量有点大, 确定要导出" + ref.D.count + "条数据吗")', { ref }, () => download_())
 }
 
 function onCellClick(ref, e) {
@@ -404,26 +400,26 @@ function contextMenu(ref, e) {
 
     function hideMenu(e) {
         ref.menu = undefined
-        f5()
+        ref.render()
         document.removeEventListener("click", hideMenu)
     }
 
     function hideHead(v) {
         ref.hides.push(v)
-        f5()
+        ref.render()
     }
 
     function showHead(e) {
         const i = Array.from(e.currentTarget.lastChild.children).indexOf(e.target)
         ref.hides.splice(i, 1)
-        f5()
+        ref.render()
     }
 
     function add2Tree(field, head) {
         if (!ref.tree) return distinct(ref, field, ref.Q, root => ref.tree = { fields: [field], heads: [head], root, open: {} })
         ref.tree.fields.push(field)
         ref.tree.heads.push(head)
-        f5()
+        ref.render()
     }
 
     const filter = (k, v) => e => {
@@ -458,9 +454,11 @@ function contextMenu(ref, e) {
             arr = arr.map(txt => { return { txt, fn: filter(k, v) } })
         } else return
     }
-    ref.menu = { arr, top: e.clientY - (innerHeight - e.clientY > 200 ? -16 : 25 * arr.length + 28) + "px", left: e.clientX - (innerWidth - e.clientX > 120 ? 10 : 100) + "px" }
+    let Y = e.clientY + scrollY
+    let X = e.clientX + scrollX
+    ref.menu = { arr, top: Y - (innerHeight - Y > 200 ? -16 : 25 * arr.length + 28) + "px", left: X - (innerWidth - X > 120 ? 10 : 100) + "px" }
     document.addEventListener("click", hideMenu)
-    f5()
+    ref.render()
 }
 
 function getTD(el) {
