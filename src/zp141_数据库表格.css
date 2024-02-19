@@ -60,16 +60,9 @@ module.exports=` .zp141 {
     display: inline-block;
 }
 
-.zp141 label .zinput,
-.zp141 label .zswitch {
-    margin-left: 5px;
-}
-
 .zp141 label input[type=checkbox] {
-    width: 17px;
-    height: 17px;
-    position: relative;
-    top: 5px;
+    width: 15px;
+    height: 15px;
 }
 
 .zp141 table {
@@ -166,5 +159,38 @@ module.exports=` .zp141 {
     height: 2px;
 }
 
+.zp141 .op {
+    color: blue;
+    cursor: pointer;
+}
+
+.zp141 .op~.op {
+    margin-left: 8px;
+}
+
+.zp141 .editpop {
+    width: 600px;
+}
+
+.zp141 .editpop>label {
+    margin-bottom: 9px;
+    display: flex;
+    position: relative;
+    align-items: center;
+}
+
+.zp141 .editpop>label>span:first-child {
+    width: 22%;
+    text-align: right;
+    display: inline-block;
+    line-height: 1.9;
+}
+.zp141 .editpop>label>span:first-child::after {
+    content: ":";
+    margin: 0px 8px 0px 2px;
+}
+.zp141 .editpop>label>.zinput {
+    flex: 1;
+}
 
 `
