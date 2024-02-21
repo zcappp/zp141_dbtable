@@ -48,7 +48,7 @@ function rTable(ref) {
         </tr></thead>
         <tbody onClick={e => props.onCellClick && onCellClick(ref, e)} onContextMenu={e => contextMenu(ref, e)}>{ref.list.map((o, r) => 
             <tr className={(data && data._id === o._id ? "cur" : "") + " r" + r} key={r}>{paths.map((k, c) => 
-                <td className={"c" + c} key={c}>{display && display[c] ? excA(display[c], {$x: rows[r][k]}) : rows[r][k]}</td>
+                <td className={"c" + c} key={c}>{display && display[c] ? excA(display[c], {$x: rows[r], path: k, value: rows[r][k]}) : rows[r][k]}</td>
             )}</tr>)}
             {!!props.loadMore && <tr className="observer"/>}
         </tbody>
@@ -86,7 +86,7 @@ function rTop(ref) {
         {(p.searchBox || p.enableSearchField) && <button onClick={() => searchBtn(ref)} className="zbtn search">查询</button>}
         {!!p.loaded && <span className="loaded">已加载/总数：<strong>{ref.D.skip + ref.D.arr.length}</strong>/<strong>{ref.D.count}</strong></span>}
         {!!p.Excel && <span onClick={() => download(ref)} className="zbtn export">导出</span>}
-        {p.onNew && p.editPop && <span onClick={() => toEdit(ref)} className="zbtn export">新建</span>}
+        {p.onNew && p.editPop && <span onClick={() => toEdit(ref)} className="zbtn">新建</span>}
     </div>
 }
 
@@ -244,8 +244,8 @@ function init1(ref) {
         ref.updateMeta("p.P.onCellClick", (p.onCellClick ? p.onCellClick + "; " : "") + 'exc($exp[text] || "")')
         ref.updateMeta("joe.exp.删除", 'confirm("提示", "确定要删除吗？数据不可恢复！")\n$' + ref.D.model + '.delete($x._id)\n$r ? info("已删除") : warn("删除失败")\nrender()')
         ref.updateMeta("joe.exp.编辑", '$(".zp141").edit($x)')
-        ref.updateMeta("p.P.onNew", '$' + ref.D.model + '.create("' + (ref.D.arr[0] ? ref.D.arr[0].type : "type") + '"' + (ref.D.model == "xdb" ? ', date().getTime() + ""' : "type") + ', $x.x); $r ? info("已新建") : warn("新建失败")')
-        ref.updateMeta("p.P.onSave", '$' + ref.D.model + '.modify($x._id, $x.x); $r ? info("已保存") : warn("保存失败")')
+        ref.updateMeta("p.P.onNew", '$' + ref.D.model + '.create("' + (ref.D.arr[0] ? ref.D.arr[0].type : "type") + '"' + (ref.D.model == "xdb" ? ', date().getTime() + ""' : "") + ', $x.x); $r ? info("已新建") : warn("新建失败")')
+        ref.updateMeta("p.P.onSave", '$' + ref.D.model + '.modify($x._id, { $set: { x: $x.x } }); $r ? info("已保存") : warn("保存失败")')
         ref.updateMeta("p.P.editPop", ref.paths.filter(a => a.path).map((path, i) => { return { path, label: ref.heads[i], type: "单行文本" } }))
         ref.paths = p.columns.map(a => a.path)
         ref.heads = p.columns.map(a => a.header)
@@ -509,7 +509,7 @@ function toEdit(ref, $x) {
             v = v.target.checked
         } else {
             v = v.target.value
-            //  if (v == "") return setIn(O, path, undefined)
+            if (v == "") return setIn(O, path, undefined)
             if (o.type == "数值") v = parseFloat(v)
         }
         setIn(O, path, v)
@@ -531,7 +531,6 @@ function toEdit(ref, $x) {
     ref.pop = [$x ? "编辑" : "新建", <div className="editpop">{ref.props.editPop.map((o, i) => <label key={i}><span className={o.required ? "zrequire" : ""}>{o.label || o.path}</span>{Type[o.type](o)}</label>)}</div>, <button className="zbtn zprimary" onClick={() => op()}>提交</button>]
 
     function op() {
-        log(O, $x ? ref.props.onSave : ref.props.onNew)
         exc($x ? ref.props.onSave : ref.props.onNew, { $x: O }, () => {
             ref.pop = undefined
             ref.render()
@@ -547,7 +546,7 @@ $plugin({
         prop: "path",
         type: "text",
         label: "数据路径",
-        ph: "search()的第一个参赛"
+        ph: "search()的第一个参数"
     }, {
         prop: "popFilter",
         type: "switch",
@@ -616,7 +615,7 @@ $plugin({
             prop: "display",
             type: "text",
             label: "渲染表达式",
-            ph: "date($x).format()"
+            ph: "date(value).format()"
         }]
     }, {
         prop: "enableSearchField",
@@ -639,7 +638,7 @@ $plugin({
         }, {
             prop: "query",
             type: "select",
-            label: "查询",
+            label: "查询query",
             items: ["有无", "下拉选择", "等于", "不等于", "包含", "不包含", "开头是", "末尾是", "大于", "小于", "大于或等于", "小于或等于"]
         }, {
             prop: "options",
@@ -688,7 +687,7 @@ $plugin({
         }, {
             prop: "required",
             type: "switch",
-            label: "必填"
+            label: "是否必填"
         }, {
             prop: "options",
             type: "text",
