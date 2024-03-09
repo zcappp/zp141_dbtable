@@ -231,6 +231,7 @@ function init1(ref) {
         }, 200)
     }
     if (p.diyColumn && !p.columns) {
+        if (!ref.paths) ref.doList()
         ref.updateMeta("p.P.columns", ref.paths.map(k => { return { header: k, path: k } }))
         scroll("columns")
     }
