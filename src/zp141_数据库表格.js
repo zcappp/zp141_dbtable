@@ -95,7 +95,7 @@ function rPop(ref) {
         <div className="zmask"/>
         <div className="zmodal">
             <svg onClick={() => {ref.pop = undefined; ref.render()}} className="zsvg zsvg-x" viewBox="64 64 896 896"><path d="M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 0 0 203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z"></path></svg>
-            <div className="zmodal-hd">{ref.pop[0]}</div><div className="zmodal-bd">{ref.pop[1]}</div><div className="zmodal-ft">{ref.pop[2]}</div>
+            <div className="hd">{ref.pop[0]}</div><div className="bd">{ref.pop[1]}</div><div className="ft">{ref.pop[2]}</div>
         </div>
     </div>
 }
@@ -360,7 +360,7 @@ function setDay(ref) {
     ref.pop = [<div><select className="zinput">{arr.map((o, i) => <option value={o} key={i}>{o}</option>)}</select>的时间范围</div>, <div>
         <input type="datetime-local" step="1" className="zinput" onKeyDown={e => e.key === "Enter" && op()}/> -&nbsp;
         <input type="datetime-local" step="1" className="zinput" onKeyDown={e => e.key === "Enter" && op()}/>
-    </div>, <button className="zbtn zprimary" onClick={op}>查询</button>]
+    </div>, <button className="zbtn main" onClick={op}>查询</button>]
 
     function op() {
         let f = $(".zmodal select").value
@@ -529,7 +529,7 @@ function toEdit(ref, $x) {
         时间: o => <input type="time" step="1" defaultValue={get(o)} onChange={e => set(o, e)} className="zinput"/>,
         日期时间: o => <input type="datetime-local" step="1" defaultValue={get(o) ? new Date(get(o)).format("YYYY-MM-DDTHH:MM:ss") : undefined} onChange={e => set(o, e)} className="zinput"/>,
     }
-    ref.pop = [$x ? "编辑" : "新建", <div className="editpop">{ref.props.editPop.map((o, i) => <label key={i}><span className={o.required ? "zrequire" : ""}>{o.label || o.path}</span>{Type[o.type](o)}</label>)}</div>, <button className="zbtn zprimary" onClick={() => op()}>提交</button>]
+    ref.pop = [$x ? "编辑" : "新建", <div className="editpop">{ref.props.editPop.map((o, i) => <label key={i}><span className={o.required ? "zstar" : ""}>{o.label || o.path}</span>{Type[o.type](o)}</label>)}</div>, <button className="zbtn main" onClick={() => op()}>提交</button>]
 
     function op() {
         exc($x ? ref.props.onSave : ref.props.onNew, { $x: O }, () => {
