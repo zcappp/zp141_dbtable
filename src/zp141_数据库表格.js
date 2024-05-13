@@ -35,14 +35,14 @@ function render(ref) {
         init1(ref)
     }
     ref.doList()
-    return <Fragment>{rTop(ref)}<div className="main">{!!ref.tree && rTree(ref)}{rTable(ref)}</div>
+    return <Fragment>{rTop(ref)}<main>{!!ref.tree && rTree(ref)}{rTable(ref)}</main>
         {ref.menu && <div className="menu" style={{top: ref.menu.top, left: ref.menu.left}}>{ref.menu.arr.map(a => <div onClick={a.fn} key={a.txt}>{a.txt}</div>)}</div>}
     {!!ref.pop && rPop(ref)}</Fragment>
 }
 
 function rTable(ref) {
     let { props, heads, paths, rows, data, display, sorts, sortR } = ref
-    return <table className="ztable">
+    return <table className="ztable zfix">
         <thead onContextMenu={e => contextMenu(ref, e)}><tr>
             {paths.map((a, i) => <th className={"h" + i} key={i}><a onClick={e => sort(ref, e, a)} className={sortCx(sorts, sortR, a)} data-seq={sortSeq(sorts, a)}>{heads ? heads[i] : a}</a></th>)}
         </tr></thead>
@@ -91,11 +91,11 @@ function rTop(ref) {
 }
 
 function rPop(ref) {
-    return <div className="zmodals">
+    return <div className="zmodals open">
         <div className="zmask"/>
         <div className="zmodal">
-            <svg onClick={() => {ref.pop = undefined; ref.render()}} className="zsvg zsvg-x" viewBox="64 64 896 896"><path d="M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 0 0 203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z"></path></svg>
-            <div className="hd">{ref.pop[0]}</div><div className="bd">{ref.pop[1]}</div><div className="ft">{ref.pop[2]}</div>
+            <i onClick={() => {ref.pop = undefined; ref.render()}} className="zdel zhover" />
+            <h3 className="hd">{ref.pop[0]}</h3><div className="bd">{ref.pop[1]}</div><div className="ft">{ref.pop[2]}</div>
         </div>
     </div>
 }
@@ -578,13 +578,13 @@ $plugin({
         type: "number",
         ph: "默认至少30条",
         label: "超过多少数据量才显示筛选",
-        show: "p.P.filterTree"
+        show: "P.filterTree"
     }, {
         prop: "onSearch",
         type: "text",
         label: "搜索事件",
         ph: 'log(arr, count)',
-        show: "p.P.popFilter || p.P.searchBox"
+        show: "P.popFilter || P.searchBox"
     }, {
         prop: "onCellClick",
         type: "text",
@@ -603,7 +603,7 @@ $plugin({
         prop: "columns",
         type: "array",
         label: "列配置",
-        show: "p.P.diyColumn",
+        show: "P.diyColumn",
         struct: [{
             prop: "header",
             type: "text",
@@ -626,7 +626,7 @@ $plugin({
         prop: "searchFields",
         type: "array",
         label: "查询选项",
-        show: "p.P.enableSearchField",
+        show: "P.enableSearchField",
         struct: [{
             prop: "label",
             type: "text",
@@ -655,17 +655,17 @@ $plugin({
         prop: "onNew",
         type: "text",
         label: "新建事件",
-        show: "p.P.enableCRUD"
+        show: "P.enableCRUD"
     }, {
         prop: "onSave",
         type: "text",
         label: "保存事件",
-        show: "p.P.enableCRUD"
+        show: "P.enableCRUD"
     }, {
         prop: "editPop",
         type: "array",
         label: "新建/编辑表单选项",
-        show: "p.P.enableCRUD",
+        show: "P.enableCRUD",
         struct: [{
             prop: "label",
             type: "text",
