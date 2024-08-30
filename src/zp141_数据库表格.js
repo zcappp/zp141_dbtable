@@ -21,7 +21,7 @@ function init(ref) {
 }
 
 function render(ref) {
-    if (!ref.ppath) return <div>请配置数据路径</div>
+    if (!ref.ppath) return ref.isDev ? <div>请配置数据路径</div> : ""
     ref.D = excA(ref.ppath)
     if (!ref.D) return <div/>
     ref.list = ref.props.loadMore ? ref.D.all : ref.D.arr
